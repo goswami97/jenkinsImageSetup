@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sonarqube-deployment
+  namespace: dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sonarqube
+  template:
+    metadata:
+      labels:
+        app: sonarqube
+    spec:
+      containers:
+      - name: sonarqube
+        image: sonarqube:9.8.0-community
+        volumeMounts:
+          - mountPath: "/opt/sonarqube/data"
+            name: sonar-data
+          - mountPath: "/opt/sonarqube/extensions"
+            name: sonar-extensions
+        args:
+          - -Dsonar.web.context=/
+          - -Dsonar.search.javaAdditionalOpts=-Dnode.store.allow_mmap=false
+        env:
+        - name: SONAR_JDBC_USERNAME
+          valueFrom:
+             secretKeyRef:
+               name: double7-sonarqube-db-secrets
+               key: username
+        - name: SONAR_JDBC_PASSWORD
+          valueFrom:
+             secretKeyRef:
+               name: double7-sonarqube-db-secrets
+               key: password
+        - name: SONAR_JDBC_URL
+          value: "jdbc:postgresql://10.218.160.3/sonardb"
+        ports:
+        - name: http-port
+          containerPort: 9000
+      volumes:
+      - name: sonar-data
+        persistentVolumeClaim:
+          claimName: sonarqube-pv-claim-data
+      - name: sonar-extensions
+        persistentVolumeClaim:
+          claimName: sonarqube-pv-claim-extensions
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sonarqube-service
+  namespace: dev
+  annotations:
+    cloud.google.com/neg: '{"ingress": true}'
+spec:
+  type: NodePort
+  selector:
+    app: sonarqube
+  ports:
+    - port: 80
+      targetPort: 9000

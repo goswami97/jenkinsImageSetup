@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jenkins-deployment
+  namespace: dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jenkins
+  template:
+    metadata:
+      labels:
+        app: jenkins
+    spec:
+      securityContext:
+        runAsUser: 0
+      containers:
+      - name: jenkins
+        #        image: asia-south1-docker.pkg.dev/double7/double7-image-registry/double7-jenkins:lts-2.375.2
+        image: santoshgoswami/doubleseven-jenkins:lts
+        readinessProbe:
+          httpGet:
+            path: /login
+            port: 8080
+        ports:
+        - name: http-port
+          containerPort: 8080
+        - name: jnlp-port
+          containerPort: 50000
+        volumeMounts:
+        - name: jenkins-pv
+          mountPath: "/var/jenkins_home"
+        - mountPath: "/var/run/docker.sock"
+          name: dockersock
+      volumes:
+      - name: jenkins-pv
+        persistentVolumeClaim:
+          claimName: jenkins-pv-claim
+      - name: dockersock
+        hostPath:
+          path: /var/run/docker.sock
+          
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jenkins-service
+  namespace: dev
+  annotations:
+    cloud.google.com/neg: '{"ingress": true}'
+spec:
+  type: NodePort
+  selector:
+    app: jenkins
+  ports:
+    - port: 80
+      targetPort: 8080
+

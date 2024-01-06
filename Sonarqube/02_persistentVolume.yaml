@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: sonarqube-pv-01
+spec:
+  storageClassName: "standard"
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  claimRef:
+    namespace: dev
+    name: sonarqube-pv-claim-data
+  gcePersistentDisk:
+    pdName: disk02
+    fsType: ext4
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sonarqube-pv-claim-data
+  namespace: dev
+spec:
+  storageClassName: "standard"
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+      
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: sonarqube-pv-02
+spec:
+  storageClassName: "standard"
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  claimRef:
+    namespace: dev
+    name: sonarqube-pv-claim-extensions
+  gcePersistentDisk:
+    pdName: disk03
+    fsType: ext4
+      
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sonarqube-pv-claim-extensions
+  namespace: dev
+spec:
+  storageClassName: "standard"
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
